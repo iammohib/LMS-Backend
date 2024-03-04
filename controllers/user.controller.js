@@ -68,7 +68,7 @@ const getUser = async (req, res) => {
   }
 };
 
-exports = {
+export {
   register,
   login,
   logout,
