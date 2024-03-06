@@ -5,6 +5,7 @@ import connectToDb from "./configs/db.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import morgan from "morgan";
+import errorMiddleware from "./middlewares/error.middleware.js";
 
 const app = express();
 
@@ -41,4 +42,6 @@ app.all("*", (_req, res) => {
   res.status(400).send("404 page not found !");
 });
 
-export default app;
+app.use(errorMiddleware);
+
+export default app

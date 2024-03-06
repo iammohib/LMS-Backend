@@ -5,12 +5,13 @@ import {
   logout,
   getUser,
 } from "../controllers/user.controller.js";
+import isLoggedIn from "../middlewares/auth.middleware.js"
 
 const router = Router();
 
 router.post("/register", register);
 router.post("/login", login);
-router.post("/logout", logout);
-router.get("/me", getUser);
+router.get("/logout", logout);
+router.get("/me", isLoggedIn ,getUser);
 
 export default router;
