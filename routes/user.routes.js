@@ -4,6 +4,7 @@ import {
   login,
   logout,
   getUser,
+  changePassword,
 } from "../controllers/user.controller.js";
 import isLoggedIn from "../middlewares/auth.middleware.js"
 
@@ -13,5 +14,6 @@ router.post("/register", register);
 router.post("/login", login);
 router.get("/logout", logout);
 router.get("/me", isLoggedIn ,getUser);
+router.post("/changepassword",isLoggedIn ,changePassword);
 
 export default router;
