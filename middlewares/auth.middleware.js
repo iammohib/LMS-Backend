@@ -4,7 +4,7 @@ import AppError from "../utils/error.util.js";
 const isLoggedin = async (req, res, next) => {
   try {
     const { token } = req.cookies;
-    console.log(token)
+    // console.log(token)
     if (!token) {
       return next(new AppError(400, "Unauthenticated, login first"));
     }
