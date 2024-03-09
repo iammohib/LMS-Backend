@@ -1,5 +1,7 @@
 import User from "../models/user.model.js";
+import uploadOnCloudinary from "../utils/cloudinary.util.js";
 import AppError from "../utils/error.util.js";
+import fs from "fs/promises"
 
 const cookieOption = {
   maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
@@ -40,10 +42,6 @@ export const register = async (req, res, next) => {
         new AppError(400, "User registration failed, please try again !")
       );
     }
-
-    //TODO: file upload
-    
-
 
     await user.save();
 
@@ -161,5 +159,50 @@ export const changePassword = async (req, res, next) => {
     });
   } catch (error) {
     return next(new AppError(500, error.message));
+  }
+};
+
+/**
+ * @CHANGEPROFILEPIC
+ */
+export const changeProfilePic = async (req, res, next) => {
+  try {
+    const imagePath = await req.file.path;
+    if (!imagePath) {
+      return next(new AppError(400, "Internal server error"));
+    }
+
+    const userId = req.user.id;
+    if (!userId) {
+      return next(new AppError(400, "Internal server error"));
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return next(new AppError(400, "Internal server error"));
+    }
+
+    const option = {
+      folder: 'lms',
+      width: 250,
+      height: 250,
+      gravity: 'faces',
+      crop: 'fill'
+    }
+    const result = await uploadOnCloudinary(imagePath,option);
+    user.avatar.public_id = result.public_id;
+    user.avatar.secure_url = result.secure_url;
+
+    await user.save();
+
+    // deleting the req.file from server after uploading it to cloudinary
+    fs.rm(imagePath)
+    res.status(201).json({
+      success: true,
+      message: "Profile picture updated successfully",
+      result,
+    });
+  } catch (error) {
+    return next(new AppError(400, error.message));
   }
 };
