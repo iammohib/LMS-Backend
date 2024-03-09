@@ -1,7 +1,8 @@
 import User from "../models/user.model.js";
 import uploadOnCloudinary from "../utils/cloudinary.util.js";
 import AppError from "../utils/error.util.js";
-import fs from "fs/promises"
+import fs from "fs/promises";
+import crypto from "crypto";
 
 const cookieOption = {
   maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
@@ -183,25 +184,100 @@ export const changeProfilePic = async (req, res, next) => {
     }
 
     const option = {
-      folder: 'lms',
+      folder: "lms",
       width: 250,
       height: 250,
-      gravity: 'faces',
-      crop: 'fill'
-    }
-    const result = await uploadOnCloudinary(imagePath,option);
+      gravity: "faces",
+      crop: "fill",
+    };
+    const result = await uploadOnCloudinary(imagePath, option);
     user.avatar.public_id = result.public_id;
     user.avatar.secure_url = result.secure_url;
 
     await user.save();
 
     // deleting the req.file from server after uploading it to cloudinary
-    fs.rm(imagePath)
+    fs.rm(imagePath);
     res.status(201).json({
       success: true,
       message: "Profile picture updated successfully",
       result,
     });
+  } catch (error) {
+    return next(new AppError(400, error.message));
+  }
+};
+
+/**
+ * @FORGOTPASSWORD
+ */
+
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return next(new AppError(400, "Enter the email address"));
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next(
+        new AppError(400, "User is not exist with this email address")
+      );
+    }
+
+    const forgotPasswordToken = await user.getForgotPasswordToken();
+    if (!forgotPasswordToken) {
+      return next(new AppError(400, "Internal Server Error"));
+    }
+
+    await user.save();
+    res.status(201).json({
+      success: true,
+      message: "Forgot-Password Token generated successfully",
+      forgotPasswordToken,
+    });
+  } catch (error) {
+    return next(new AppError(400, error.message));
+  }
+};
+
+/**
+ * @RESETPASSWORD
+ */
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { resettoken } = req.params;
+    const { password } = req.body;
+
+    const forgotPasswordToken = await crypto
+      .createHash("sha256")
+      .update(resettoken)
+      .digest("hex");
+
+    const user = await User.findOne({
+      forgotPasswordToken,
+      forgotPasswordExpiry: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return next(new AppError(400, "Invalid token! or token is expired"));
+    }
+    
+    // making forgotPassword* valus undefined in the DB
+    user.password = password;
+    
+    user.forgotPasswordToken = undefined;
+    user.forgotPasswordExpiry = undefined;
+
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Password reset successfully!",
+      user
+    })
   } catch (error) {
     return next(new AppError(400, error.message));
   }
