@@ -4,6 +4,7 @@ import AppError from "../utils/error.util.js";
 import fs from "fs/promises";
 import crypto from "crypto";
 import sendEmail from "../utils/sendEmail.js"
+import sendGmail from "../utils/sendGmail.js"
 
 const cookieOption = {
   maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
@@ -238,7 +239,8 @@ export const forgotPassword = async (req, res, next) => {
 
     const subject = "Reset Password";
     const message = `Click on the link to reset password: ${resetPasswordURL} \n Ignore if you are not requested`
-    await sendEmail(email,subject,message);
+    // await sendEmail(email,subject,message);
+    await sendGmail(email,subject,message);
 
     res.status(201).json({
       success: true,
