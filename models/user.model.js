@@ -54,8 +54,9 @@ const userSchema = new Schema(
   }
 );
 
-// Password Hashing
+// Hashing password before saving to DB
 userSchema.pre("save", async function (next) {
+  // If password is not modified then do not hash it
   if (!this.isModified("password")) {
     next();
   }
@@ -64,6 +65,7 @@ userSchema.pre("save", async function (next) {
 
 // methods
 userSchema.methods = {
+  // Generating JWT token
   generateJWTToken: async function () {
     const payloads = {
       id: this._id,
@@ -75,9 +77,13 @@ userSchema.methods = {
       expiresIn: process.env.JWT_EXPIRY,
     });
   },
+
+  // Comparing, if users's input password is valid or not
   comparePassword: async function (password) {
     return await bcrypt.compare(password, this.password);
   },
+
+  // Generating token for reset-password, and hash the token and saving it in DB
   getForgotPasswordToken: async function () {
     var forgotPasswordToken = crypto.randomBytes(20).toString("hex");
 
