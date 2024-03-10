@@ -1,9 +1,13 @@
 import User from "../models/user.model.js";
-import uploadOnCloudinary from "../utils/cloudinary.util.js";
 import AppError from "../utils/error.util.js";
 import fs from "fs/promises";
 import crypto from "crypto";
-import sendEmail from "../utils/sendEmail.js"
+import sendEmail from "../utils/sendEmail.js";
+import sendGmail from "../utils/sendGmail.js";
+import {
+  uploadOnCloudinary,
+  destroyImageOnCloudinary,
+} from "../utils/cloudinary.util.js";
 
 const cookieOption = {
   maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
@@ -169,8 +173,8 @@ export const changePassword = async (req, res, next) => {
  */
 export const changeProfilePic = async (req, res, next) => {
   try {
-    const imagePath = await req.file.path;
-    if (!imagePath) {
+    const imageFile = await req.file;
+    if (!imageFile) {
       return next(new AppError(400, "Internal server error"));
     }
 
@@ -191,20 +195,28 @@ export const changeProfilePic = async (req, res, next) => {
       gravity: "faces",
       crop: "fill",
     };
-    const result = await uploadOnCloudinary(imagePath, option);
+
+    // Deletes the old image uploaded by the user
+    await destroyImageOnCloudinary(user.avatar.public_id);
+
+    const result = await uploadOnCloudinary(imageFile.path, option);
+    if (!result) {
+      return next(new AppError(500, "Server Error"));
+    }
     user.avatar.public_id = result.public_id;
     user.avatar.secure_url = result.secure_url;
 
     await user.save();
 
     // deleting the req.file from server after uploading it to cloudinary
-    fs.rm(imagePath);
+    fs.rm(imageFile.path);
     res.status(201).json({
       success: true,
       message: "Profile picture updated successfully",
-      result,
+      user,
     });
   } catch (error) {
+    fs.rm(imageFile.path);
     return next(new AppError(400, error.message));
   }
 };
@@ -234,16 +246,19 @@ export const forgotPassword = async (req, res, next) => {
 
     await user.save();
 
-    const resetPasswordURL = `${process.env.FRONTEND_URL}/resettoken/${forgotPasswordToken}`
+    const resetPasswordURL = `${process.env.FRONTEND_URL}/resetpassword/${forgotPasswordToken}`;
+    
+    const resetPasswordURLBE = `${process.env.BACKEND_URL}/api/v1/user/resetpassword/${forgotPasswordToken}`;
 
     const subject = "Reset Password";
-    const message = `Click on the link to reset password: ${resetPasswordURL} \n Ignore if you are not requested`
-    await sendEmail(email,subject,message);
+    const message = `Click on the link to reset password: ${resetPasswordURL} \nor\n${resetPasswordURLBE} \n\nIgnore if you are not requested`;
+    // await sendEmail(email,subject,message);
+    await sendGmail(email, subject, message);
 
     res.status(201).json({
       success: true,
       message: `Reset-Password Token generated and send to your email ${email} successfully`,
-      forgotPasswordToken,
+      // forgotPasswordToken,
     });
   } catch (error) {
     user.forgotPasswordToken = undefined;
@@ -275,10 +290,10 @@ export const resetPassword = async (req, res, next) => {
     if (!user) {
       return next(new AppError(400, "Invalid token! or token is expired"));
     }
-    
+
     // making forgotPassword* valus undefined in the DB
     user.password = password;
-    
+
     user.forgotPasswordToken = undefined;
     user.forgotPasswordExpiry = undefined;
 
@@ -287,9 +302,63 @@ export const resetPassword = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: "Password reset successfully!",
-      user
-    })
+      user,
+    });
   } catch (error) {
+    return next(new AppError(400, error.message));
+  }
+};
+
+/**
+ * @UPDATE_PROFILE
+ */
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { id } = req.user;
+    const { fullName, email } = req.body;
+    const imageFile = req.file;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return next(new AppError(500, "Internal server error"));
+    }
+
+    if (fullName) {
+      user.fullName = fullName;
+    }
+    if (email) {
+      user.email = email;
+    }
+    if (imageFile) {
+      // Deletes the old image uploaded by the user
+      await destroyImageOnCloudinary(user.avatar.public_id);
+      const option = {
+        folder: "lms",
+        width: 250,
+        height: 250,
+        gravity: "faces",
+        crop: "fill",
+      };
+      const result = await uploadOnCloudinary(imageFile.path, option);
+      if (!result) {
+        return next(new AppError(500, "Internal server error"));
+      }
+      user.avatar.public_id = result.public_id;
+      user.avatar.secure_url = result.secure_url;
+
+      // deleting the req.file from server after uploading it to cloudinary
+      fs.rm(imageFile.path);
+    }
+
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Profile updated successfully",
+      user,
+    });
+  } catch (error) {
+    fs.rm(imageFile.path);
     return next(new AppError(400, error.message));
   }
 };

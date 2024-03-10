@@ -1,6 +1,6 @@
 import { config } from "dotenv";
 config();
-import express from "express";
+import express, { urlencoded } from "express";
 import connectToDb from "./configs/db.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -15,6 +15,7 @@ connectToDb();
 // Middleware
 // Built-In
 app.use(express.json());
+app.use(express.urlencoded({extended: true}))
 
 // Third-Party
 app.use(
