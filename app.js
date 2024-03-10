@@ -43,6 +43,7 @@ app.all("*", (_req, res) => {
   res.status(400).send("404 page not found !");
 });
 
+// Custom error handling middleware
 app.use(errorMiddleware);
 
 export default app

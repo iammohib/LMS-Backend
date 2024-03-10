@@ -3,12 +3,17 @@ import AppError from "../utils/error.util.js";
 
 const isLoggedin = async (req, res, next) => {
   try {
+    // Exracting token from cookies
     const { token } = req.cookies;
-    // console.log(token)
     if (!token) {
-      return next(new AppError(400, "Unauthenticated, login first"));
+      return next(new AppError(400, "Unauthenticated, Please login first"));
     }
+
+    // Verifying the token and get user-id and other details from it
     const userDetails = await jwt.verify(token, process.env.JWT_SECRET_KEY);
+    if (!userDetails) {
+      return next(new AppError(400, "Unauthenticated, Please login first"))
+    }
     req.user = userDetails;
     next();
   } catch (error) {
