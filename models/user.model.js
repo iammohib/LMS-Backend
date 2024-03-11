@@ -48,6 +48,9 @@ const userSchema = new Schema(
     },
     forgotPasswordToken: "String",
     forgotPasswordExpiry: Date,
+    tempEmail: "String",
+    otp: "String",
+    otpExpiry: Date,
   },
   {
     timestamps: true,
@@ -85,19 +88,43 @@ userSchema.methods = {
 
   // Generating token for reset-password, and hash the token and saving it in DB
   getForgotPasswordToken: async function () {
-    var forgotPasswordToken = crypto.randomBytes(20).toString("hex");
+    const forgotPasswordToken = crypto.randomBytes(20).toString("hex");
 
-    this.forgotPasswordToken =
-     crypto
+    this.forgotPasswordToken = crypto
       .createHash("sha256")
       .update(forgotPasswordToken)
       .digest("hex");
     this.forgotPasswordExpiry = Date.now() + 15 * 60 * 1000;
-    
+
     return forgotPasswordToken;
+  },
+
+  // Generating a 6 digit OTP for email verification
+  generateOTP: async function () {
+    const min = 100000; // Minimum 6-digit number
+    const max = 999999; // Maximum 6-digit number
+    const otp = Math.floor(Math.random() * (max - min + 1)) + min;
+
+    this.otp = crypto.createHash("sha256").update(otp.toString()).digest("hex");
+
+    this.otpExpiry = Date.now() + 15 * 60 * 1000;
+
+    return otp;
+  },
+
+  // Comparing user's input OTP to hash OTP
+  isValidOTP: async function (otp) {
+    const userOTP = crypto
+      .createHash("sha256")
+      .update(otp.toString())
+      .digest("hex");
+
+    if (this.otp === userOTP && this.otpExpiry >= Date.now()) {
+      return true;
+    }
+    return false;
   },
 };
 
 const User = model("User", userSchema);
 export default User;
-

@@ -307,7 +307,6 @@ export const forgotPassword = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: `Reset-Password Token generated and send to your email ${email} successfully`,
-      // forgotPasswordToken,
     });
   } catch (error) {
     // If there is error, undefining the token and expiry
@@ -381,7 +380,7 @@ export const updateProfile = async (req, res, next) => {
   try {
     // Destructring the neccessary details
     const { id } = req.user;
-    const { fullName, email } = req.body;
+    const { fullName } = req.body;
     const imageFile = req.file;
 
     // Checking the user exitance and get details
@@ -392,10 +391,6 @@ export const updateProfile = async (req, res, next) => {
 
     if (fullName) {
       user.fullName = fullName;
-    }
-
-    if (email) {
-      user.email = email;
     }
 
     if (imageFile) {
@@ -435,6 +430,108 @@ export const updateProfile = async (req, res, next) => {
     });
   } catch (error) {
     fs.rm(imageFile.path);
+    return next(new AppError(400, error.message));
+  }
+};
+
+/**
+ * @CHANGEEMAIL
+ * @ROUTE @PUT {{URL}}/api/v1/user/changeemail
+ * @ACCESS Private (Logged in user only)
+ */
+export const changeEmail = async (req, res, next) => {
+  // Destructring data from req
+  const { id } = req.user;
+  const { newEmail } = req.body;
+
+  if (!newEmail) {
+    return next(new AppError(400, "Enter your email"));
+  }
+
+  // Check if the email already registered or not
+  const emailExist = await User.findOne({ email: newEmail });
+  if (emailExist) {
+    return next(
+      new AppError(400, "Email already registered, use another email")
+    );
+  }
+
+  // Getting user detail through id
+  const user = await User.findById(id);
+  if (!user) {
+    return next(new AppError(400, "Internal server Error"));
+  }
+
+  try {
+    // Generating OTP for email verification
+    const OTP = await user.generateOTP();
+
+    if (!OTP) {
+      return next(new AppError(400, "OTP is not defined"));
+    }
+
+    // for mail body
+    const subject = "OTP for email verification";
+    const message = `Here is the OTP for email verification:\n${OTP}\n\nIgnore if not requested`;
+
+    // Sending the reset password mail
+    // await sendEmail(email,subject,message);
+    await sendGmail(newEmail, subject, message);
+
+    // Saving new email to DB, as temporary
+    user.tempEmail = newEmail;
+
+    // Saving user object
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+      message: `OTP sent to your email ${newEmail} for email verification, valid for 15 min`,
+    });
+  } catch (error) {
+    user.tempEmail = undefined;
+    user.otp = undefined;
+    user.otpExpiry = undefined;
+
+    // Saving user object
+    await user.save();
+    return next(new AppError(400, error.message));
+  }
+};
+
+/**
+ * @VERIFYEMAIL
+ * @ROUTE @PUT {{URL}}/api/v1/user/verifyemail
+ * @ACCESS Private (Logged in user only)
+ */
+export const verifyEmail = async (req, res, next) => {
+  const { id } = req.user;
+  const { otp } = req.body;
+  if (!otp) {
+    return next(new AppError(400, "Enter the OTP"));
+  }
+
+  // Getting user detail through id
+  const user = await User.findById(id);
+  if (!user) {
+    return next(new AppError(400, "Internal server error"));
+  }
+  if (!(await user.isValidOTP(otp))) {
+    return next(new AppError(400, "Invalid OTP or OTP expired"));
+  }
+  try {
+    user.email = user.tempEmail;
+    user.tempEmail = undefined;
+    user.otp = undefined;
+    user.otpExpiry = undefined;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Email updated successfully",
+      user,
+    });
+  } catch (error) {
     return next(new AppError(400, error.message));
   }
 };
