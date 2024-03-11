@@ -9,6 +9,8 @@ import {
   forgotPassword,
   resetPassword,
   updateProfile,
+  changeEmail,
+  verifyEmail,
 } from "../controllers/user.controller.js";
 import isLoggedIn from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/multer.middleware.js";
@@ -34,5 +36,7 @@ router.put(
   upload.single("avatar"),
   updateProfile
 );
+router.put("/changeemail", isLoggedIn, changeEmail);
+router.put("/verifyemail", isLoggedIn, verifyEmail);
 
 export default router;
