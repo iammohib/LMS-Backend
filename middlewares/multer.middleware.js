@@ -1,7 +1,7 @@
 import path from "path";
 import multer from "multer";
 
-const upload = multer({
+export const upload = multer({
   dest: "uploads/",
   limits: {
     fileSize: 50 * 1024 * 1024, // 50Mb max size limit
@@ -30,5 +30,3 @@ const upload = multer({
     cb(null, true);
   },
 });
-
-export default upload;

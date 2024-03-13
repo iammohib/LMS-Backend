@@ -1,9 +1,9 @@
 import User from "../models/user.model.js";
-import AppError from "../utils/error.util.js";
+import { AppError } from "../utils/error.util.js";
 import fs from "fs/promises";
 import crypto from "crypto";
-import sendEmail from "../utils/sendEmail.js";
-import sendGmail from "../utils/sendGmail.js";
+import { sendMail } from "../utils/sendEmail.js";
+import { sendGmail } from "../utils/sendGmail.js";
 import {
   uploadOnCloudinary,
   destroyImageOnCloudinary,

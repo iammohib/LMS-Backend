@@ -12,31 +12,31 @@ import {
   changeEmail,
   verifyEmail,
 } from "../controllers/user.controller.js";
-import isLoggedIn from "../middlewares/auth.middleware.js";
-import upload from "../middlewares/multer.middleware.js";
+import { isLoggedIn } from "../middlewares/auth.middleware.js";
+import { upload } from "../middlewares/multer.middleware.js";
 
-const router = Router();
+const userRouter = Router();
 
-router.post("/register", register);
-router.post("/login", login);
-router.post("/logout", logout);
-router.get("/me", isLoggedIn, getUser);
-router.post("/changepassword", isLoggedIn, changePassword);
-router.post(
+userRouter.post("/register", register);
+userRouter.post("/login", login);
+userRouter.post("/logout", logout);
+userRouter.get("/me", isLoggedIn, getUser);
+userRouter.post("/changepassword", isLoggedIn, changePassword);
+userRouter.post(
   "/changeprofilepic",
   isLoggedIn,
   upload.single("avatar"),
   changeProfilePic
 );
-router.post("/forgotpassword", forgotPassword);
-router.post("/resetpassword/:resettoken", resetPassword);
-router.put(
+userRouter.post("/forgotpassword", forgotPassword);
+userRouter.post("/resetpassword/:resettoken", resetPassword);
+userRouter.put(
   "/updateprofile",
   isLoggedIn,
   upload.single("avatar"),
   updateProfile
 );
-router.put("/changeemail", isLoggedIn, changeEmail);
-router.put("/verifyemail", isLoggedIn, verifyEmail);
+userRouter.put("/changeemail", isLoggedIn, changeEmail);
+userRouter.put("/verifyemail", isLoggedIn, verifyEmail);
 
-export default router;
+export { userRouter };
