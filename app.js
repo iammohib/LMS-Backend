@@ -34,11 +34,11 @@ app.get("/ping", (req, res) => {
 
 // Import all routes
 import { userRouter } from "./routes/user.routes.js";
-// import { courseRouter } from "./routes/course.route.js";
+import { courseRouter } from "./routes/course.route.js";
 
 // Routing to routes
 app.use("/api/v1/user", userRouter);
-// app.use("/api/v1/course", courseRouter);
+app.use("/api/v1/course", courseRouter);
 
 // Default catch all route - 404
 app.all("*", (_req, res) => {
