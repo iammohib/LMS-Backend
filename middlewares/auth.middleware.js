@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
-import AppError from "../utils/error.util.js";
+import { AppError } from "../utils/error.util.js";
 
-const isLoggedin = async (req, res, next) => {
+export const isLoggedIn = async (req, res, next) => {
   try {
     // Exracting token from cookies
     const { token } = req.cookies;
@@ -12,7 +12,7 @@ const isLoggedin = async (req, res, next) => {
     // Verifying the token and get user-id and other details from it
     const userDetails = await jwt.verify(token, process.env.JWT_SECRET_KEY);
     if (!userDetails) {
-      return next(new AppError(400, "Unauthenticated, Please login first"))
+      return next(new AppError(400, "Unauthenticated, Please login first"));
     }
     req.user = userDetails;
     next();
@@ -20,4 +20,3 @@ const isLoggedin = async (req, res, next) => {
     return next(new AppError(500, error.message));
   }
 };
-export default isLoggedin;

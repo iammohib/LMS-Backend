@@ -6,14 +6,14 @@ import crypto from "crypto";
 const userSchema = new Schema(
   {
     fullName: {
-      type: "String",
+      type: String,
       required: [true, "Name is required"],
       minLength: [3, "Name must have 3 characters"],
       lowercase: true,
       trim: true,
     },
     email: {
-      type: "String",
+      type: String,
       required: [true, "Email is required"],
       unique: true,
       lowercase: true,
@@ -24,32 +24,32 @@ const userSchema = new Schema(
       ], // Matches email against regex
     },
     password: {
-      type: "String",
+      type: String,
       required: [true, "Password is required"],
       minLength: [8, "Password must be atleast 8 characters"],
       select: false,
     },
     subscription: {
-      id: "String",
-      status: "String",
+      id: String,
+      status: String,
     },
     avatar: {
       public_id: {
-        type: "String",
+        type: String,
       },
       secure_url: {
-        type: "String",
+        type: String,
       },
     },
     role: {
-      type: "String",
+      type: String,
       enum: ["USER", "ADMIN"],
       default: "USER",
     },
-    forgotPasswordToken: "String",
+    forgotPasswordToken: String,
     forgotPasswordExpiry: Date,
-    tempEmail: "String",
-    otp: "String",
+    tempEmail: String,
+    otp: String,
     otpExpiry: Date,
   },
   {

@@ -6,4 +6,4 @@ export const uploadOnCloudinary = async (imagePath, option) => {
 
 export const destroyImageOnCloudinary = async (public_id) => {
   return await cloudinary.uploader.destroy(public_id);
-}
+};

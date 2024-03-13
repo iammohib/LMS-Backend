@@ -1,10 +1,10 @@
 import nodemailer from "nodemailer";
 
-const sendMail = async (to, subject, message) => {
+export const sendGmail = async (to, subject, message) => {
   // Create a transporter object using SMTP transport
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    host: 'smtp.gmail.com',
+    service: "gmail",
+    host: "smtp.gmail.com",
     port: 465,
     secure: true, // Use `true` for TLS if your Gmail account requires it
     auth: {
@@ -31,4 +31,3 @@ const sendMail = async (to, subject, message) => {
     }
   });
 };
-export default sendMail;
