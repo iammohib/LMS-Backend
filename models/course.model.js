@@ -32,7 +32,7 @@ const courseSchema = new Schema(
       required: [true, "Instructor name is required"],
       trim: true,
     },
-    lectures: {
+    lectures: [{
       title: String,
       description: String,
       lecture: {
@@ -43,7 +43,7 @@ const courseSchema = new Schema(
           type: String,
         },
       },
-    },
+    }],
     numberOfLectures: {
       type: Number,
       default: 0,
