@@ -1,6 +1,7 @@
 import Course from "../models/course.model.js";
 import { AppError } from "../utils/error.util.js";
 import {
+  deleteFolderWithContentsOnCloudinary,
   destroyImageOnCloudinary,
   uploadOnCloudinary,
 } from "../utils/cloudinary.util.js";
@@ -26,6 +27,14 @@ export const createCourse = async (req, res, next) => {
       throw new Error("Fill all the feild!");
     }
 
+    // Check if course exists with the with provided title
+    const courseExist = await Course.findOne({ title });
+    if (courseExist) {
+      throw new Error(
+        "Course is already exist with this title, use unique one"
+      );
+    }
+
     // Transformation option for cloudinary
     const option = {
       folder: `lms/courses/${title}`,
@@ -48,6 +57,7 @@ export const createCourse = async (req, res, next) => {
       thubmnail: {
         public_id: result.public_id,
         secure_url: result.secure_url,
+        folder: result.folder,
       },
     });
 
@@ -116,10 +126,10 @@ export const addLectureToCourse = async (req, res, next) => {
 
     const option = {
       folder: `lms/courses/${course.title}`,
-      resource_type: 'video'
-    }
+      resource_type: "video",
+    };
     // Upload file on cloudinary
-    const result = await uploadOnCloudinary(lecture.path,option);
+    const result = await uploadOnCloudinary(lecture.path, option);
     // console.log(result)
     if (!result) {
       throw new Error("Server Error!");
@@ -128,13 +138,13 @@ export const addLectureToCourse = async (req, res, next) => {
     // Saving lecture detail in DB
     const lectureData = {
       public_id: result.public_id,
-      secure_url: result.secure_url
-    }
+      secure_url: result.secure_url,
+    };
     course.lectures.push({
       title,
       description,
-      lecture: lectureData
-    })
+      lecture: lectureData,
+    });
 
     course.numberOfLectures = course.lectures.length;
 
@@ -154,9 +164,22 @@ export const addLectureToCourse = async (req, res, next) => {
 
 /**
  * @GET_LECTURES_BY_COURSEID
+ * @ROUTE @GET {{URL}}/api/v1/course/:id
+ * @ACCESS PROTECTED(SUBSRIBERS ONLY)
  */
 export const getLecturesByCourseId = async (req, res, next) => {
   try {
+    const { id } = req.params;
+    const course = await Course.findById(id);
+    if (!course) {
+      return next(new AppError(400, "Something went wrong, Course not found"));
+    }
+    const lecture = course.lectures;
+    res.status(200).json({
+      success: true,
+      message: "Lecture fetched",
+      lecture,
+    });
   } catch (error) {
     return next(new AppError(400, error.message));
   }
@@ -177,6 +200,26 @@ export const updateCourse = async (req, res, next) => {
  */
 export const deleteCourse = async (req, res, next) => {
   try {
+    const { id } = req.params;
+
+    // Checking if course exist, if noe thorw error
+    const course = await Course.findById(id);
+    if (!course) {
+      return next(
+        new AppError(400, "Something went wrong!, Course not found.")
+      );
+    }
+
+    // To Fix - videos lecture not deleting on cloudinary
+    // Deleting the course files,folder on cloudinary, if not, throw error
+    await deleteFolderWithContentsOnCloudinary(course.thubmnail.folder);
+
+    // Deleting course on the folder
+    await Course.findByIdAndDelete(id);
+    res.status(200).json({
+      success: true,
+      message: "Course deleted successfully",
+    });
   } catch (error) {
     return next(new AppError(400, error.message));
   }
