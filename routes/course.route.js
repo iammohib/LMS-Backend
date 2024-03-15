@@ -21,7 +21,7 @@ courseRouter
   .route("/:id")
   .get(getLecturesByCourseId)
   .post(isLoggedIn,upload.single("lecture"),addLectureToCourse)
-  .put(updateCourse)
+  .put(isLoggedIn, upload.single("thumbnail"),updateCourse)
   .delete(deleteCourse);
 
 export { courseRouter };

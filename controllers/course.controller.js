@@ -189,8 +189,65 @@ export const getLecturesByCourseId = async (req, res, next) => {
  * @updateCourse
  */
 export const updateCourse = async (req, res, next) => {
+  const thumbnail = req.file;
+  const { title } = req.body;
   try {
+    // If title throw error
+    if (title) {
+      throw new Error("Title can't modified");
+    }
+
+    // Take Id from URL
+    const { id } = req.params;
+
+    // Check course existance and update
+    const course = await Course.findByIdAndUpdate(
+      id,
+      { $set: req.body },
+      { runValidators: true }
+    );
+    if (!course) {
+      throw new Error("Course Doesn't exist !");
+    }
+    console.log("for debug");
+
+    // Updating thumbnail of the course, if thumbnail is there
+    if (thumbnail) {
+      // Transformation option for cloudinary
+      const option = {
+        folder: `lms/courses/${course.title}`,
+        width: 250,
+        height: 250,
+        crop: "fill",
+      };
+
+      // upload thumbnail on cloudinary
+      const result = await uploadOnCloudinary(thumbnail.path, option);
+      if (!result) {
+        throw new Error("Server Error!, thumbnail could'nt be updated");
+      }
+      // Deleting old thumbnail from cloudinary
+      await destroyImageOnCloudinary(course.thubmnail.public_id);
+
+      // Saving new thumbnail details
+      course.thubmnail.public_id = result.public_id;
+      course.thubmnail.secure_url = result.secure_url;
+
+      // Deleting the local file
+      fs.rm(thumbnail.path);
+    }
+
+    // Saving details in DB
+    await course.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Course updated successfully",
+    });
   } catch (error) {
+    if (thumbnail) {
+      fs.rm(thumbnail.path);
+    }
     return next(new AppError(400, error.message));
   }
 };
