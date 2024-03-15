@@ -4,7 +4,7 @@ export const uploadOnCloudinary = async (imagePath, option) => {
   try {
     return await cloudinary.uploader.upload(imagePath, option);
   } catch (error) {
-    throw new Error("Something went wrong!");
+    throw new Error(`Something went wrong!, error: ${error.message}`);
   }
 };
 
@@ -12,16 +12,28 @@ export const destroyImageOnCloudinary = async (public_id) => {
   try {
     return await cloudinary.uploader.destroy(public_id);
   } catch (error) {
-    throw new Error("Something went wrong!");
+    throw new Error(`Something went wrong!, error: ${error.message}`);
   }
 };
 
 export const deleteFolderWithContentsOnCloudinary = async (folder) => {
-  // TODO
   try {
-    return await cloudinary.api.delete_resources_by_prefix(folder);
-    // await cloudinary.api.delete_folder(folder);
+    // Fetch all resources (videos and other files) in the specified folder
+    const { resources } = await cloudinary.search
+      .expression(`folder:${folder}`)
+      .execute();
+
+    // Delete all resources (files) in the folder
+    for (const resource of resources) {
+      await cloudinary.api.delete_resources([resource.public_id], {
+        type: resource.type,
+        resource_type: resource.resource_type,
+      });
+    }
+
+    // Finally deleting the folder
+    await cloudinary.api.delete_folder(folder);
   } catch (error) {
-    throw new Error("Something went wrong!");
+    throw new Error("Error deleting files:", error.message);
   }
 };

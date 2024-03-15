@@ -210,7 +210,6 @@ export const deleteCourse = async (req, res, next) => {
       );
     }
 
-    // To Fix - videos lecture not deleting on cloudinary
     // Deleting the course files,folder on cloudinary, if not, throw error
     await deleteFolderWithContentsOnCloudinary(course.thubmnail.folder);
 
