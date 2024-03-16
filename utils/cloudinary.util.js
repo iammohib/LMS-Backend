@@ -8,9 +8,9 @@ export const uploadOnCloudinary = async (imagePath, option) => {
   }
 };
 
-export const destroyImageOnCloudinary = async (public_id) => {
+export const destroyImageOnCloudinary = async (public_id, resource_type) => {
   try {
-    return await cloudinary.uploader.destroy(public_id);
+    return await cloudinary.uploader.destroy(public_id, resource_type);
   } catch (error) {
     throw new Error(`Something went wrong!, error: ${error.message}`);
   }
