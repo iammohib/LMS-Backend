@@ -47,7 +47,7 @@ export const createCourse = async (req, res, next) => {
         folder: " ",
       },
     });
-    
+
     if (!course) {
       throw new Error("Internal Server Error");
     }
@@ -284,6 +284,64 @@ export const deleteCourse = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Course deleted successfully",
+    });
+  } catch (error) {
+    return next(new AppError(400, error.message));
+  }
+};
+
+/**
+ * @removeLectureFromCourse
+ */
+export const removeLectureFromCourse = async (req, res, next) => {
+  try {
+    // Destructuring details from req.query
+    const { courseId, lectureId } = req.query;
+
+    if (!courseId || !lectureId) {
+      return next(new AppError(400, "Internal server error"));
+    }
+
+    // Checking if course exist or not
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return next(new AppError(400, "Course not found"));
+    }
+
+    // Find the index of the lecture using the lectureId
+    const lectureIndex = course.lectures.findIndex(
+      (lecture) => lecture._id.toString() === lectureId.toString()
+    );
+
+    // If `lectureIndex = -1` then send error
+    if (lectureIndex === -1) {
+      return next(new AppError(400, "Lecture doesn't exist"));
+    }
+
+    // Delete the  lecture from the cloudinary first
+    await destroyImageOnCloudinary(
+      course.lectures[lectureIndex].lecture.public_id,
+      {
+        resource_type: "video",
+      }
+    );
+
+    // Remove the lecture from array of lectures in DB
+    course.lectures.splice(lectureIndex, 1);
+
+    // Update the number of lectures
+    course.numberOfLectures = course.lectures.length;
+
+    // Saving the course object
+    await course.save();
+
+    res.status(200).json({
+      lectureIndex,
+      success: true,
+      message: "Lecture removed successfully",
+      courseId,
+      lectureId,
+      course,
     });
   } catch (error) {
     return next(new AppError(400, error.message));
