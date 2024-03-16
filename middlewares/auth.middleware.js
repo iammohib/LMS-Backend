@@ -20,3 +20,19 @@ export const isLoggedIn = async (req, res, next) => {
     return next(new AppError(500, error.message));
   }
 };
+
+// Middleware for authorization check
+export const authorizeRoles =
+  (...roles) =>
+  async (req, res, next) => {
+    try {
+      if (!roles.includes(req.user.role)) {
+        return next(
+          new AppError(400, "You are not authorized for this action")
+        );
+      }
+      next();
+    } catch (error) {
+      return next(new AppError(400, "Erver Error !"));
+    }
+  };
