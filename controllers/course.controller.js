@@ -35,6 +35,23 @@ export const createCourse = async (req, res, next) => {
       );
     }
 
+    // First create course then add thumbnail
+    const course = await Course.create({
+      title,
+      description,
+      category,
+      instructor,
+      thubmnail: {
+        public_id: " ",
+        secure_url: " ",
+        folder: " ",
+      },
+    });
+    
+    if (!course) {
+      throw new Error("Internal Server Error");
+    }
+
     // Transformation option for cloudinary
     const option = {
       folder: `lms/courses/${title}`,
@@ -49,24 +66,16 @@ export const createCourse = async (req, res, next) => {
       throw new Error("Internal Server Error");
     }
 
-    const course = await Course.create({
-      title,
-      description,
-      category,
-      instructor,
-      thubmnail: {
-        public_id: result.public_id,
-        secure_url: result.secure_url,
-        folder: result.folder,
-      },
-    });
+    // Saving thumbnail details in DB
+    course.thubmnail.public_id = result.public_id;
+    course.thubmnail.secure_url = result.secure_url;
+    course.thubmnail.folder = result.folder;
 
-    if (!course) {
-      await destroyImageOnCloudinary(result.public_id);
-      throw new Error("Internal Server Error");
-    }
+    // Saving in DB
     await course.save();
+
     fs.rm(thumbnail.path);
+
     res.status(200).json({
       success: true,
       message: "Course created successfully",

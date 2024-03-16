@@ -377,11 +377,11 @@ export const resetPassword = async (req, res, next) => {
  * @ACCESS Private (Logged in user only)
  */
 export const updateProfile = async (req, res, next) => {
+  const imageFile = req.file;
   try {
     // Destructring the neccessary details
     const { id } = req.user;
     const { fullName } = req.body;
-    const imageFile = req.file;
 
     // Checking the user exitance and get details
     const user = await User.findById(id);
@@ -429,7 +429,9 @@ export const updateProfile = async (req, res, next) => {
       user,
     });
   } catch (error) {
-    fs.rm(imageFile.path);
+    if (imageFile) {
+      fs.rm(imageFile.path);
+    }
     return next(new AppError(400, error.message));
   }
 };
