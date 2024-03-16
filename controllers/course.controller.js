@@ -94,6 +94,7 @@ export const createCourse = async (req, res, next) => {
  */
 export const getAllCourses = async (req, res, next) => {
   try {
+    // Get course from the DB through courseId but without lectures details
     const courses = await Course.find({}).select("-lectures");
     if (!courses) {
       return next(new AppError("Something went wrong, Course not found!"));
@@ -114,6 +115,7 @@ export const getAllCourses = async (req, res, next) => {
  * @ACCESS PRIVATE(ADMIN ONLY)
  */
 export const addLectureToCourse = async (req, res, next) => {
+  // Check if lecture video is there is not, if not return with an error
   const lecture = req.file;
   if (!lecture) {
     return new AppError(400, "Provide lecture video");
@@ -174,7 +176,7 @@ export const addLectureToCourse = async (req, res, next) => {
 /**
  * @GET_LECTURES_BY_COURSEID
  * @ROUTE @GET {{URL}}/api/v1/course/:id
- * @ACCESS PROTECTED(SUBSRIBERS ONLY)
+ * @ACCESS PROTECTED (ADMIN OR SUBSRIBERS ONLY)
  */
 export const getLecturesByCourseId = async (req, res, next) => {
   try {
@@ -195,7 +197,9 @@ export const getLecturesByCourseId = async (req, res, next) => {
 };
 
 /**
- * @updateCourse
+ * @UPDATE_COURSE
+ * @ROUTE @PUT {{URL}}/api/v1/course/:id
+ * @ACCESS PRIVATE (ADMIN ONLY)
  */
 export const updateCourse = async (req, res, next) => {
   const thumbnail = req.file;
@@ -262,7 +266,9 @@ export const updateCourse = async (req, res, next) => {
 };
 
 /**
- * @deleteCourse
+ * @DELETE_COURSE
+ * @ROUTE @DELETE {{URL}}/api/v1/course/:id
+ * @ACCESS PRIVATE (ADMIN ONLY)
  */
 export const deleteCourse = async (req, res, next) => {
   try {
@@ -291,7 +297,9 @@ export const deleteCourse = async (req, res, next) => {
 };
 
 /**
- * @removeLectureFromCourse
+ * @REMOVE_LECTURE_FROM_COURSE
+ * @ROUTE @DELETE {{URL}}/api/v1/course?courseId=........&lectureId=.........
+ * @ACCESS PRIVATE (ADMIN ONLY)
  */
 export const removeLectureFromCourse = async (req, res, next) => {
   try {
@@ -336,11 +344,8 @@ export const removeLectureFromCourse = async (req, res, next) => {
     await course.save();
 
     res.status(200).json({
-      lectureIndex,
       success: true,
       message: "Lecture removed successfully",
-      courseId,
-      lectureId,
       course,
     });
   } catch (error) {
