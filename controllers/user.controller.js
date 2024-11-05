@@ -17,7 +17,7 @@ const cookieOption = {
 
 /**
  * @REGISTER
- * @ROUTE @POST => {{URL}}/api/v1/user/registr
+ * @ROUTE @POST => {{URL}}/api/v1/user/register
  * @ACCESS Public
  */
 export const register = async (req, res, next) => {
